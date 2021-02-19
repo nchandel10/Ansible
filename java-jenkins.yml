@@ -1,0 +1,67 @@
+--- 
+- 
+  become: true
+  hosts: webservers
+  tasks: 
+    - 
+      apt: 
+        cache_valid_time: 86400
+        update_cache: true
+        upgrade: true
+      name: "Update and upgrade apt packages"
+    - 
+      apt: 
+        name: openjdk-8-jdk
+        state: present
+      name: "Install Java"
+    - 
+      apt: 
+        name: tomacat8
+        state: latest
+      name: "Install tomcat8"
+    - 
+      name: "Tomcat8 started"
+      service: 
+        name: tomcat8
+        state: restarted
+- 
+  become: true
+  hosts: node1
+  tasks: 
+    - 
+      apt: 
+        cache_valid_time: 86400
+        update_cache: true
+        upgrade: true
+      name: "Update and upgrade apt packages"
+    - 
+      apt: 
+        name: openjdk-8-jdk
+        state: present
+      name: "Install Java"
+    - 
+      apt_key: "url=https://pkg.jenkins.io/debian-stable/jenkins.io.key state=present"
+      name: "Install Jenkins on Node1"
+    - 
+      apt_repository: "repo='deb https://pkg.jenkins.io/debian-stable binary/' state=present"
+      name: "ensure the repository is configured"
+    - 
+      apt: "name=jenkins update_cache=yes"
+      become: true
+      name: "Check Jenkins is installed"
+    - 
+      name: "Start the Jenkins service"
+      service: "name=jenkins state=started"
+    - 
+      name: "Pause for 10 seconds"
+      pause: 
+        seconds: 10
+    - 
+      changed_when: false
+      name: "Get Jenkins initial Admin Password"
+      register: result
+      shell: "cat /var/lib/jenkins/secrets/initialAdminPassword"
+    - 
+      debug: 
+        var: result.stdout
+      name: "Echo the password"
